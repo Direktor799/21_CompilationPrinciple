@@ -2,7 +2,7 @@
 #include "Lexer.h"
 int main()
 {
-    std::string filePath = "main.cpp";
+    std::string filePath = "test.c";
     Lexer lexer(filePath);
     lexer.analyze();
     lexer.outputTokens();

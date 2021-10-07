@@ -1,8 +1,8 @@
 #include "Lexer.h"
 
-Lexer::Lexer(std::string filePath) : pos(0), status(Start)
+Lexer::Lexer(std::string filePath) : pos(0)
 {
-    std::fstream file("../" + filePath);
+    std::fstream file(filePath);
     if (!file.is_open())
     {
         std::cout << "Can not open " + filePath << std::endl;
@@ -14,64 +14,109 @@ Lexer::Lexer(std::string filePath) : pos(0), status(Start)
     file.close();
 }
 
-const char Lexer::getNextChar()
+void Lexer::nextChar()
 {
     if (pos >= program.length())
-        return EOF;
-    nowWord += program[pos++];
-    return nowWord.back();
+        currentChar = EOF;
+    else
+    {
+        currentWord += program[pos++];
+        currentChar = currentWord.back();
+    }
 }
 
 void Lexer::rollBack(size_t length)
 {
     pos = std::max(pos - length, 0UL);
-    nowWord = nowWord.substr(0, nowWord.length() - length);
+    currentWord = currentWord.substr(0, currentWord.length() - length);
+    currentChar = currentWord.back();
 }
 
 void Lexer::analyze()
 {
-    char c;
-    while (c = getNextChar())
+    while (true)
     {
-        nowWord.clear();
-        if (status == Start)
+        nextChar();
+        //std::cout << int(currentChar) << std::endl;
+        if (currentChar == EOF)
+            break;
+        else if (!isprint(currentChar)) //跳过空格
         {
-            if (!isprint(c)) //跳过空格
+            continue;
+        }
+        else if (currentChar == '#') //跳过宏
+        {
+            while (currentChar != '\n')
+                nextChar();
+        }
+        else if (currentChar == '/')  //跳过注释
+        {
+            nextChar();
+            if (currentChar == '/')
             {
-                continue;
+                while (currentChar != '\n')
+                    nextChar();
             }
-            else if (c == '#') //跳过宏
+            else if (currentChar == '*')
             {
-                while (c != '\n')
-                    getNextChar();
-            }
-            else if (isalpha(c)) //标识符
-            {
-                while (isalnum(c) || c == '_')
-                    c = getNextChar();
-                rollBack();
-                if (keyWord.find(nowWord) != keyWord.end())
-                    tokens.emplace_back(Token("KeyWord", nowWord));
-                else
-                    tokens.emplace_back(Token("ID", nowWord));
-            }
-            else if (isalnum(c))
-            {
-            }
-            else if (c == '<')
-            {
-                /* code */
-            }
-            else if (c == '>')
-            {
-                /* code */
+                while (true)
+                {
+                    nextChar();
+                    if (currentChar == '*')
+                    {
+                        nextChar();
+                        if (currentChar == '/')
+                            break;
+                        else
+                            rollBack();
+                    }
+                }
             }
         }
+        else if (isalpha(currentChar) || currentChar == '_') //标识符
+        {
+            while (isalnum(currentChar) || currentChar == '_')
+                nextChar();
+            rollBack();
+            if (keyWord.find(currentWord) != keyWord.end())
+                tokens.emplace_back(Token("KeyWord", currentWord));
+            else
+                tokens.emplace_back(Token("ID", currentWord));
+        }
+        else if (isalnum(currentChar)) //数字常量
+        {
+
+        }
+        else if (currentChar == '\'') //字符常量
+        {
+            nextChar();
+            if (currentChar == '\\')
+            {
+
+            }
+            else
+            {
+
+            }
+        }
+        else if (currentChar == '\"') //字符串常量
+        {
+            /* code */
+        }
+        else if (currentChar == '<')
+        {
+            /* code */
+        }
+        else if (currentChar == '>')
+        {
+            /* code */
+        }
+        currentWord.clear();
     }
 }
 
 void Lexer::outputTokens()
 {
     for (auto &token : tokens)
-        std::cout << token;
+        std::cout << token << std::endl;
 }

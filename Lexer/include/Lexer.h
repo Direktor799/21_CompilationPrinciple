@@ -16,12 +16,6 @@ const std::set<std::string> keyWord = {"auto", "short", "int", "long",
                          "do", "while", "goto", "continue",
                          "break", "default", "sizeof", "return"};
 
-enum DFAStatus
-{
-    Start,
-
-};
-
 class Token
 {
 private:
@@ -34,7 +28,7 @@ public:
     };
     friend std::ostream &operator<<(std::ostream &out, Token &token)
     {
-        out << '<' << token.m_type << ", " << token.m_value << '>' << std::endl;
+        out << '<' << token.m_type << ", " << token.m_value << '>';
         return out;
     }
 };
@@ -43,11 +37,11 @@ class Lexer
 {
 private:
     std::string program;
-    std::string nowWord;
+    std::string currentWord;
+    char currentChar;
     size_t pos;
-    DFAStatus status;
     std::vector<Token> tokens;
-    const char getNextChar();
+    void nextChar();
     void rollBack(size_t length = 1);
 
 public:
