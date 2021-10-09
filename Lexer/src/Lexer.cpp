@@ -1,5 +1,5 @@
 #include "Lexer.h"
-
+//to do: operator priority, error&warning, char&string, EOF
 Lexer::Lexer(std::string path) : pos(0), line(1), col(1)
 {
     filePath = path;
@@ -83,7 +83,7 @@ void Lexer::analyze()
                 }
                 continue;
             }
-            else    //可能是除号
+            else //可能是除号
             {
                 rollBack();
             }
@@ -98,44 +98,156 @@ void Lexer::analyze()
             else
                 tokens.emplace_back(Token("id", currentWord));
         }
-        else if (isdigit(currentChar) || isdigit(currentChar)) //数字常量
+        else if (isdigit(currentChar) || currentChar == '.') //数字常量
         {
-            if (currentChar == '0') //bin, oct, hex
+            bool is_float = false;
+            if (currentChar == '0') //bin, hex, oct
             {
                 nextChar();
                 if (currentChar == 'b' || currentChar == 'B')
                 {
+                    nextChar();
                     while (currentChar == '0' || currentChar == '1')
                         nextChar();
-                        int a = 0x11ull;
                 }
                 else if (currentChar == 'x' || currentChar == 'X')
                 {
-
+                    nextChar();
+                    while (isdigit(currentChar) ||
+                           (currentChar >= 'a' && currentChar <= 'f') ||
+                           (currentChar >= 'A' && currentChar <= 'F'))
+                        nextChar();
                 }
                 else
                 {
-                    
+                    while (currentChar >= '0' && currentChar <= '7')
+                        nextChar();
                 }
             }
-            else    //dec, float
+            else //dec, float
             {
-
+                if (currentChar != '.') //可能的整数部分
+                {
+                    while (isdigit(currentChar))
+                        nextChar();
+                }
+                if (currentChar == '.') //可能的小数部分
+                {
+                    is_float = true;
+                    nextChar();
+                    while (isdigit(currentChar))
+                        nextChar();
+                }
+                if (currentChar == 'e' || currentChar == 'E')
+                {
+                    nextChar();
+                    while (isdigit(currentChar))
+                        nextChar();
+                }
             }
-        }
-        else if (currentChar == '\'') //字符常量
-        {
-            nextChar();
-            if (currentChar == '\\')
+            if (is_float)
             {
+                if (currentChar == 'f')
+                {
+                    tokens.emplace_back(Token("float", currentWord));
+                }
+                else
+                {
+                    rollBack();
+                    tokens.emplace_back(Token("double", currentWord));
+                }
             }
             else
             {
+                std::string typeName;
+                if (currentChar == 'u' || currentChar == 'U')
+                {
+                    typeName += "unsigned ";
+                    nextChar();
+                }
+                if (currentChar == 'L')
+                {
+                    typeName += "long";
+                    nextChar();
+                    if (currentChar == 'L')
+                    {
+                        typeName += " long";
+                        nextChar();
+                    }
+                }
+                else if (currentChar == 'l')
+                {
+                    typeName += "long";
+                    nextChar();
+                    if (currentChar == 'L')
+                    {
+                        typeName += " long";
+                        nextChar();
+                    }
+                }
+                rollBack();
+                if (typeName.length() == 0 || typeName == "unsigned ")
+                    typeName += "int";
+                tokens.emplace_back(Token(typeName, currentWord));
             }
         }
-        else if (currentChar == '\"') //字符串常量
+        else if (currentChar == '\'' || currentChar == '\"') //字符/字符串常量
         {
-            /* code */
+            char quotType = currentChar;
+            nextChar();
+            while (currentChar != quotType)
+            {
+                if (currentChar == '\\')
+                {
+                    //NOT supported list:
+                    //'\e'(console font color)
+                    //'\u'(unicode)
+                    //'\p'(unicode re)
+                    nextChar();
+                    if (currentChar >= '0' && currentChar <= '7') //isdigit unknown
+                    {
+                        nextChar();
+                        if (currentChar >= '0' && currentChar <= '7')
+                        {
+                            nextChar();
+                            if (currentChar >= '0' && currentChar <= '7')
+                                nextChar();
+                        }
+                    }
+                    else if (currentChar == 'n' || currentChar == 'r' ||
+                             currentChar == 't' || currentChar == 'v' || currentChar == 'a' ||
+                             currentChar == 'b' || currentChar == 'f' || currentChar == '\'' ||
+                             currentChar == '\"' || currentChar == '\\' || currentChar == '\?')
+                        nextChar();
+                    else if (currentChar == 'x')
+                    {
+                        nextChar();
+                        int hexLength = 0;
+                        while (isdigit(currentChar) ||
+                               (currentChar >= 'a' && currentChar <= 'f') ||
+                               (currentChar >= 'A' && currentChar <= 'F'))
+                        {
+                            hexLength++;
+                            nextChar();
+                        }
+                    }
+                    else if (currentChar == '\r' || currentChar == '\n')
+                    {
+                        while (currentChar == '\r' || currentChar == '\n')
+                            nextChar();
+                    }
+                    else
+                    {
+                        //error
+                    }
+                }
+                else
+                    nextChar();
+            }
+            if (quotType == '\'')
+                tokens.emplace_back("char", currentWord);
+            else
+                tokens.emplace_back("string", currentWord);
         }
         else if (currentChar == '<')
         {
@@ -221,6 +333,17 @@ void Lexer::analyze()
                 tokens.emplace_back(Token("div_op", currentWord));
             }
         }
+        else if (currentChar == '%')
+        {
+            nextChar();
+            if (currentChar == '=')
+                tokens.emplace_back(Token("mod_assign_op", currentWord));
+            else
+            {
+                rollBack();
+                tokens.emplace_back(Token("mod_op", currentWord));
+            }
+        }
         else if (currentChar == '|')
         {
             nextChar();
@@ -258,10 +381,44 @@ void Lexer::analyze()
                 tokens.emplace_back(Token("xor_op", currentWord));
             }
         }
+        else if (currentChar == '<')
+        {
+            nextChar();
+            if (currentChar == '<')
+            {
+                nextChar();
+                if (currentChar == '=')
+                    tokens.emplace_back(Token("lshift_assign_op", currentWord));
+                else
+                {
+                    rollBack();
+                    tokens.emplace_back(Token("lshift_op", currentWord));
+                }
+            }
+            else
+                rollBack();
+        }
+        else if (currentChar == '>')
+        {
+            nextChar();
+            if (currentChar == '>')
+            {
+                nextChar();
+                if (currentChar == '=')
+                    tokens.emplace_back(Token("rshift_assign_op", currentWord));
+                else
+                {
+                    rollBack();
+                    tokens.emplace_back(Token("rshift_op", currentWord));
+                }
+            }
+            else
+                rollBack();
+        }
         else if (currentChar == '(' || currentChar == ')' ||
-        currentChar == '{' || currentChar == '}' ||
-        currentChar == '[' || currentChar == ']' ||
-        currentChar == ';')
+                 currentChar == '{' || currentChar == '}' ||
+                 currentChar == '[' || currentChar == ']' ||
+                 currentChar == ';')
         {
             tokens.emplace_back(Token("sep", currentWord));
         }
