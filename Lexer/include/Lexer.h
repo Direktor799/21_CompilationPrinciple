@@ -14,7 +14,7 @@ const std::set<std::string> keyWord = {"auto", "short", "int", "long",
                                        "static", "volatile", "void", "if",
                                        "else", "switch", "case", "for",
                                        "do", "while", "goto", "continue",
-                                       "break", "default", "sizeof", "return"};
+                                       "break", "default", "sizeof", "return", "sizeof"};
 
 class Token
 {

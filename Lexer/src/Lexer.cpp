@@ -1,5 +1,5 @@
 #include "Lexer.h"
-//to do: operator priority, error&warning, char&string, EOF
+//to do:error&warning
 Lexer::Lexer(std::string path) : pos(0), line(1), col(1)
 {
     filePath = path;
@@ -54,7 +54,7 @@ void Lexer::analyze()
         }
         if (currentChar == '#') //跳过宏
         {
-            while (currentChar != '\n')
+            while (currentChar != '\n' && currentChar != EOF)
                 nextChar();
             continue;
         }
@@ -63,13 +63,13 @@ void Lexer::analyze()
             nextChar();
             if (currentChar == '/')
             {
-                while (currentChar != '\n')
+                while (currentChar != '\n' && currentChar != EOF)
                     nextChar();
                 continue;
             }
             else if (currentChar == '*')
             {
-                while (true)
+                while (currentChar != EOF)
                 {
                     nextChar();
                     if (currentChar == '*')
@@ -90,7 +90,7 @@ void Lexer::analyze()
         }
         if (isalpha(currentChar) || currentChar == '_') //标识符
         {
-            while (isalnum(currentChar) || currentChar == '_')
+            while ((isalnum(currentChar) || currentChar == '_') && currentChar != EOF)
                 nextChar();
             rollBack();
             if (keyWord.find(currentWord) != keyWord.end())
@@ -107,20 +107,19 @@ void Lexer::analyze()
                 if (currentChar == 'b' || currentChar == 'B')
                 {
                     nextChar();
-                    while (currentChar == '0' || currentChar == '1')
+                    while ((currentChar == '0' || currentChar == '1') && currentChar != EOF)
                         nextChar();
                 }
                 else if (currentChar == 'x' || currentChar == 'X')
                 {
                     nextChar();
-                    while (isdigit(currentChar) ||
-                           (currentChar >= 'a' && currentChar <= 'f') ||
-                           (currentChar >= 'A' && currentChar <= 'F'))
+                    while ((isdigit(currentChar) || (currentChar >= 'a' && currentChar <= 'f') ||
+                           (currentChar >= 'A' && currentChar <= 'F')) && currentChar != EOF)
                         nextChar();
                 }
                 else
                 {
-                    while (currentChar >= '0' && currentChar <= '7')
+                    while ((currentChar >= '0' && currentChar <= '7') && currentChar != EOF)
                         nextChar();
                 }
             }
@@ -128,20 +127,20 @@ void Lexer::analyze()
             {
                 if (currentChar != '.') //可能的整数部分
                 {
-                    while (isdigit(currentChar))
+                    while ((isdigit(currentChar)) && currentChar != EOF)
                         nextChar();
                 }
                 if (currentChar == '.') //可能的小数部分
                 {
                     is_float = true;
                     nextChar();
-                    while (isdigit(currentChar))
+                    while ((isdigit(currentChar)) && currentChar != EOF)
                         nextChar();
                 }
                 if (currentChar == 'e' || currentChar == 'E')
                 {
                     nextChar();
-                    while (isdigit(currentChar))
+                    while ((isdigit(currentChar)) && currentChar != EOF)
                         nextChar();
                 }
             }
@@ -195,7 +194,7 @@ void Lexer::analyze()
         {
             char quotType = currentChar;
             nextChar();
-            while (currentChar != quotType)
+            while ((currentChar != quotType) && currentChar != EOF)
             {
                 if (currentChar == '\\')
                 {
@@ -223,9 +222,8 @@ void Lexer::analyze()
                     {
                         nextChar();
                         int hexLength = 0;
-                        while (isdigit(currentChar) ||
-                               (currentChar >= 'a' && currentChar <= 'f') ||
-                               (currentChar >= 'A' && currentChar <= 'F'))
+                        while (isdigit(currentChar) ||(currentChar >= 'a' && currentChar <= 'f') ||
+                               (currentChar >= 'A' && currentChar <= 'F')  && currentChar != EOF)
                         {
                             hexLength++;
                             nextChar();
@@ -233,7 +231,7 @@ void Lexer::analyze()
                     }
                     else if (currentChar == '\r' || currentChar == '\n')
                     {
-                        while (currentChar == '\r' || currentChar == '\n')
+                        while ((currentChar == '\r' || currentChar == '\n') && currentChar != EOF)
                             nextChar();
                     }
                     else
@@ -282,7 +280,7 @@ void Lexer::analyze()
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("not_op", currentWord));
+                tokens.emplace_back(Token("log_not_op", currentWord));
             }
         }
         else if (currentChar == '+')
@@ -305,6 +303,8 @@ void Lexer::analyze()
                 tokens.emplace_back(Token("sub_assign_op", currentWord));
             else if (currentChar == '-')
                 tokens.emplace_back(Token("dec_op", currentWord));
+            else if (currentChar == '>')
+                tokens.emplace_back(Token("member_pointer_op", currentWord));
             else
             {
                 rollBack();
@@ -381,6 +381,10 @@ void Lexer::analyze()
                 tokens.emplace_back(Token("xor_op", currentWord));
             }
         }
+        else if (currentChar == '~')
+        {
+            tokens.emplace_back(Token("bit_not_op", currentWord));
+        }
         else if (currentChar == '<')
         {
             nextChar();
@@ -415,10 +419,15 @@ void Lexer::analyze()
             else
                 rollBack();
         }
+        else if (currentChar == '.')
+        {
+            tokens.emplace_back(Token("member_op", currentWord));
+        }
         else if (currentChar == '(' || currentChar == ')' ||
                  currentChar == '{' || currentChar == '}' ||
                  currentChar == '[' || currentChar == ']' ||
-                 currentChar == ';')
+                 currentChar == ',' || currentChar == ';' ||
+                 currentChar == '?' || currentChar == ':')
         {
             tokens.emplace_back(Token("sep", currentWord));
         }
