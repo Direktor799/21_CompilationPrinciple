@@ -236,7 +236,7 @@ void Lexer::analyze()
                     }
                     else
                     {
-                        //error
+                        infos.emplace_back(Info(line, col, currentWord.length(), "Warning", "Unknown Escape Sequence"));
                     }
                 }
                 else
@@ -431,6 +431,8 @@ void Lexer::analyze()
         {
             tokens.emplace_back(Token("sep", currentWord));
         }
+        else
+            infos.emplace_back(Info(line, col, currentWord.length(), "Error", "Unknown Character"));
     }
 }
 
@@ -440,11 +442,11 @@ void Lexer::outputTokens()
         std::cout << token << std::endl;
 }
 
-void Lexer::outputErrorInfos()
+void Lexer::outputInfos()
 {
-    for (auto &errorinfo : errorinfos)
+    for (auto &info : infos)
     {
-        std::cout << filePath << ':' << errorinfo.m_line << ':' << errorinfo.m_col << ": error:";
-        std::cout << errorinfo.m_error << std::endl;
+        std::cout << filePath << ':' << info.m_line << ':' << info.m_col << ':';
+        std::cout << info.m_type << ':' << info.m_info << std::endl;
     }
 }

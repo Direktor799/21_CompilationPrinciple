@@ -31,13 +31,15 @@ public:
     }
 };
 
-class ErrorInfo
+class Info
 {
 public:
     size_t m_line;
     size_t m_col;
-    std::string m_error;
-    ErrorInfo(size_t line, size_t col, std::string error) : m_line(line), m_col(col), m_error(error){};
+    size_t m_wordLength;
+    std::string m_type;
+    std::string m_info;
+    Info(size_t line, size_t col, size_t wordLength, std::string type, std::string info) : m_line(line), m_col(col), m_wordLength(wordLength), m_type(type), m_info(info){};
 };
 
 class Lexer
@@ -51,7 +53,7 @@ private:
     size_t line;
     size_t col;
     std::vector<Token> tokens;
-    std::vector<ErrorInfo> errorinfos;
+    std::vector<Info> infos;
     void nextChar();
     void rollBack(size_t length = 1);
 
@@ -59,5 +61,5 @@ public:
     Lexer(std::string path);
     void analyze();
     void outputTokens();
-    void outputErrorInfos();
+    void outputInfos();
 };
