@@ -11,10 +11,12 @@ int main()
     unsigned long long longint = 123456789ULL;
     float f = 3.14f;
     double d = 5e1;
-    char c = '\'';
+    char c = 'abcd';
+    printf("\q", c);
     char s[] = "This is a string";
     if (c == 'c')
-        printf("wubba lubba dub dub\n");
+        printf("wubba lubba dub 
+        dub\n");
     else
         goto here;
 here:
@@ -22,11 +24,12 @@ here:
         continue;
     switch (c)
     {
-    case '1':
-        break;
+        case '1':
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
     return 0;
 }
+/*123

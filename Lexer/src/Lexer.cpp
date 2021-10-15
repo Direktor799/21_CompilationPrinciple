@@ -36,7 +36,16 @@ void Lexer::nextChar()
 void Lexer::rollBack(size_t length)
 {
     pos = std::max(pos - length, 0UL);
-    col--;
+    if (currentChar == '\n')
+    {
+        line--;
+        std::string lastLine = program.substr(program.find_last_of('\n', pos - 1) + 1);
+        col = lastLine.find('\n') + 1;
+    }
+    else
+    {
+        col--;
+    }
     currentWord = currentWord.substr(0, currentWord.length() - length);
     currentChar = currentWord.back();
 }
@@ -82,6 +91,8 @@ void Lexer::analyze()
                             rollBack();
                     }
                 }
+                if (currentChar == EOF)
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "Error", currentWord, "Unterminted Comment"));
                 continue;
             }
             else //可能是除号
@@ -182,16 +193,18 @@ void Lexer::analyze()
         {
             char quotType = currentChar;
             nextChar();
-            while ((currentChar != quotType) && currentChar != EOF)
+            size_t stringLength = 0;
+            while (currentChar != quotType && currentChar != EOF)
             {
                 if (currentChar == '\\')
                 {
+                    size_t beforeEscapeLength = currentWord.length() - 1;
                     //NOT supported list:
                     //'\e'(console font color)
                     //'\u'(unicode)
                     //'\p'(unicode re)
                     nextChar();
-                    if (currentChar >= '0' && currentChar <= '7') //isdigit unknown
+                    if (currentChar >= '0' && currentChar <= '7')
                     {
                         nextChar();
                         if (currentChar >= '0' && currentChar <= '7')
@@ -224,13 +237,32 @@ void Lexer::analyze()
                     }
                     else
                     {
-                        tokens.emplace_back(Token(line, col - currentWord.length(), "Warning", "Unknown Escape Sequence"));
+                        tokens.emplace_back(Token(line, col - currentWord.substr(beforeEscapeLength).length(), "Warning", currentWord.substr(beforeEscapeLength), "Unknown Escape Sequence"));
                     }
+                }
+                else if (currentChar == '\n')
+                {
+                    break;
                 }
                 else
                     nextChar();
+                stringLength++;
             }
-            tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
+            if (currentChar == EOF)
+            {
+                tokens.emplace_back(Token(line, col - currentWord.length(), "Error", currentWord, "Unterminated String"));
+            }
+            else if (currentChar == '\n')
+            {
+                rollBack();
+                tokens.emplace_back(Token(line, col - currentWord.length(), "Error", currentWord, "Unterminated String"));
+            }
+            else
+            {
+                if (quotType == '\'' && stringLength > 1)
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "Warning", currentWord, "Multi-character Character"));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
+            }
         }
         else if (currentChar == '<')
         {
@@ -417,7 +449,7 @@ void Lexer::analyze()
             tokens.emplace_back(Token(line, col - currentWord.length(), "sep", currentWord));
         }
         else
-            tokens.emplace_back(Token(line, col - currentWord.length(), "Error", "Unknown Character"));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "Error", currentWord, "Unknown Character"));
     }
 }
 
@@ -435,7 +467,29 @@ void Lexer::outputExceptions()
         if (token.m_type == "Error" || token.m_type == "Warning")
         {
             std::cout << filePath << ':' << token.m_line << ':' << token.m_col << ':';
-            std::cout << token.m_type << ':' << token.m_value << std::endl;
+            if (token.m_type == "Error")
+                std::cout << "\033[31m" << token.m_type << "\033[0m";
+            else
+                std::cout << "\033[33m" << token.m_type << "\033[0m";
+            std::cout << ':' << token.m_info << std::endl;
+            std::string tmp = program;
+            for (int i = 1; i < token.m_line; i++)
+                tmp = tmp.substr(tmp.find('\n') + 1);
+            tmp = tmp.substr(0, tmp.find('\n'));
+            for (int i = 0; i < tmp.length(); i++)
+            {
+                if (i == token.m_col - 1)
+                {
+                    if (token.m_type == "Error")
+                        std::cout << "\033[31m";
+                    else
+                        std::cout << "\033[33m";
+                }
+                std::cout << tmp[i];
+                if (i == token.m_col + token.m_value.length() - 2)
+                    std::cout << "\033[0m";
+            }
+            std::cout << std::endl;
         }
     }
 }

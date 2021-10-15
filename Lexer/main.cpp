@@ -6,6 +6,8 @@ int main()
     Lexer lexer(filePath);
     lexer.analyze();
     lexer.outputTokens();
-    lexer.outputExceptions();
+    std::cout << std::endl;
     lexer.outputCounts();
+    std::cout << std::endl;
+    lexer.outputExceptions();
 }

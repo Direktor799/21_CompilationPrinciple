@@ -24,8 +24,10 @@ public:
     size_t m_col;
     std::string m_type;
     std::string m_value;
+    std::string m_info;
 
-    Token(size_t line, size_t col, std::string type, std::string value) : m_line(line), m_col(col), m_type(type), m_value(value){};
+    Token(size_t line, size_t col, std::string type, std::string value, std::string info = "")
+    : m_line(line), m_col(col), m_type(type), m_value(value), m_info(info){};
     friend std::ostream &operator<<(std::ostream &out, Token &token)
     {
         out << '<' << token.m_type << ", " << token.m_value << '>';
