@@ -21,6 +21,8 @@ void Lexer::nextChar()
         currentChar = EOF;
     else
     {
+        currentWord += program[pos++];
+        currentChar = currentWord.back();
         if (currentChar == '\n')
         {
             line++;
@@ -28,14 +30,13 @@ void Lexer::nextChar()
         }
         else
             col++;
-        currentWord += program[pos++];
-        currentChar = currentWord.back();
     }
 }
 
 void Lexer::rollBack(size_t length)
 {
     pos = std::max(pos - length, 0UL);
+    col--;
     currentWord = currentWord.substr(0, currentWord.length() - length);
     currentChar = currentWord.back();
 }
@@ -48,7 +49,7 @@ void Lexer::analyze()
         nextChar();
         if (currentChar == EOF)
             break;
-        if (!isprint(currentChar)) //跳过空格
+        if (!isprint(currentChar) || currentChar == ' ') //跳过换行和空格
         {
             continue;
         }
@@ -94,9 +95,9 @@ void Lexer::analyze()
                 nextChar();
             rollBack();
             if (keyWord.find(currentWord) != keyWord.end())
-                tokens.emplace_back(Token(currentWord, currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), currentWord, currentWord));
             else
-                tokens.emplace_back(Token("id", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "id", currentWord));
         }
         else if (isdigit(currentChar) || currentChar == '.') //数字常量
         {
@@ -114,7 +115,8 @@ void Lexer::analyze()
                 {
                     nextChar();
                     while ((isdigit(currentChar) || (currentChar >= 'a' && currentChar <= 'f') ||
-                           (currentChar >= 'A' && currentChar <= 'F')) && currentChar != EOF)
+                            (currentChar >= 'A' && currentChar <= 'F')) &&
+                           currentChar != EOF)
                         nextChar();
                 }
                 else
@@ -148,46 +150,32 @@ void Lexer::analyze()
             {
                 if (currentChar == 'f')
                 {
-                    tokens.emplace_back(Token("float", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
                 }
                 else
                 {
                     rollBack();
-                    tokens.emplace_back(Token("double", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
                 }
             }
             else
             {
-                std::string typeName;
                 if (currentChar == 'u' || currentChar == 'U')
-                {
-                    typeName += "unsigned ";
                     nextChar();
-                }
                 if (currentChar == 'L')
                 {
-                    typeName += "long";
                     nextChar();
                     if (currentChar == 'L')
-                    {
-                        typeName += " long";
                         nextChar();
-                    }
                 }
                 else if (currentChar == 'l')
                 {
-                    typeName += "long";
                     nextChar();
                     if (currentChar == 'L')
-                    {
-                        typeName += " long";
                         nextChar();
-                    }
                 }
                 rollBack();
-                if (typeName.length() == 0 || typeName == "unsigned ")
-                    typeName += "int";
-                tokens.emplace_back(Token(typeName, currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
             }
         }
         else if (currentChar == '\'' || currentChar == '\"') //字符/字符串常量
@@ -222,8 +210,8 @@ void Lexer::analyze()
                     {
                         nextChar();
                         int hexLength = 0;
-                        while (isdigit(currentChar) ||(currentChar >= 'a' && currentChar <= 'f') ||
-                               (currentChar >= 'A' && currentChar <= 'F')  && currentChar != EOF)
+                        while (isdigit(currentChar) || (currentChar >= 'a' && currentChar <= 'f') ||
+                               (currentChar >= 'A' && currentChar <= 'F') && currentChar != EOF)
                         {
                             hexLength++;
                             nextChar();
@@ -236,154 +224,151 @@ void Lexer::analyze()
                     }
                     else
                     {
-                        infos.emplace_back(Info(line, col, currentWord.length(), "Warning", "Unknown Escape Sequence"));
+                        tokens.emplace_back(Token(line, col - currentWord.length(), "Warning", "Unknown Escape Sequence"));
                     }
                 }
                 else
                     nextChar();
             }
-            if (quotType == '\'')
-                tokens.emplace_back("char", currentWord);
-            else
-                tokens.emplace_back("string", currentWord);
+            tokens.emplace_back(Token(line, col - currentWord.length(), "value", currentWord));
         }
         else if (currentChar == '<')
         {
             nextChar();
             if (currentChar != '=')
                 rollBack();
-            tokens.emplace_back(Token("rel_op", currentWord));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
         }
         else if (currentChar == '>')
         {
             nextChar();
             if (currentChar != '=')
                 rollBack();
-            tokens.emplace_back(Token("rel_op", currentWord));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
         }
         else if (currentChar == '=')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("rel_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "assign_op", currentWord));
             }
         }
         else if (currentChar == '!')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("rel_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("log_not_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "log_not_op", currentWord));
             }
         }
         else if (currentChar == '+')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("plus_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "plus_assign_op", currentWord));
             else if (currentChar == '+')
-                tokens.emplace_back(Token("inc_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "inc_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("plus_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "plus_op", currentWord));
             }
         }
         else if (currentChar == '-')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("sub_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "sub_assign_op", currentWord));
             else if (currentChar == '-')
-                tokens.emplace_back(Token("dec_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "dec_op", currentWord));
             else if (currentChar == '>')
-                tokens.emplace_back(Token("member_pointer_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "member_pointer_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("sub_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "sub_op", currentWord));
             }
         }
         else if (currentChar == '*')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("mul_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "mul_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("mul_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "mul_op", currentWord));
             }
         }
         else if (currentChar == '/')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("div_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "div_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("div_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "div_op", currentWord));
             }
         }
         else if (currentChar == '%')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("mod_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "mod_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("mod_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "mod_op", currentWord));
             }
         }
         else if (currentChar == '|')
         {
             nextChar();
             if (currentChar == '|')
-                tokens.emplace_back(Token("rel_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
             else if (currentChar == '=')
-                tokens.emplace_back(Token("or_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "or_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("or_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "or_op", currentWord));
             }
         }
         else if (currentChar == '&')
         {
             nextChar();
             if (currentChar == '&')
-                tokens.emplace_back(Token("rel_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "rel_op", currentWord));
             else if (currentChar == '=')
-                tokens.emplace_back(Token("and_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "and_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("and_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "and_op", currentWord));
             }
         }
         else if (currentChar == '^')
         {
             nextChar();
             if (currentChar == '=')
-                tokens.emplace_back(Token("xor_assign_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "xor_assign_op", currentWord));
             else
             {
                 rollBack();
-                tokens.emplace_back(Token("xor_op", currentWord));
+                tokens.emplace_back(Token(line, col - currentWord.length(), "xor_op", currentWord));
             }
         }
         else if (currentChar == '~')
         {
-            tokens.emplace_back(Token("bit_not_op", currentWord));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "bit_not_op", currentWord));
         }
         else if (currentChar == '<')
         {
@@ -392,11 +377,11 @@ void Lexer::analyze()
             {
                 nextChar();
                 if (currentChar == '=')
-                    tokens.emplace_back(Token("lshift_assign_op", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "lshift_assign_op", currentWord));
                 else
                 {
                     rollBack();
-                    tokens.emplace_back(Token("lshift_op", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "lshift_op", currentWord));
                 }
             }
             else
@@ -409,11 +394,11 @@ void Lexer::analyze()
             {
                 nextChar();
                 if (currentChar == '=')
-                    tokens.emplace_back(Token("rshift_assign_op", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "rshift_assign_op", currentWord));
                 else
                 {
                     rollBack();
-                    tokens.emplace_back(Token("rshift_op", currentWord));
+                    tokens.emplace_back(Token(line, col - currentWord.length(), "rshift_op", currentWord));
                 }
             }
             else
@@ -421,7 +406,7 @@ void Lexer::analyze()
         }
         else if (currentChar == '.')
         {
-            tokens.emplace_back(Token("member_op", currentWord));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "member_op", currentWord));
         }
         else if (currentChar == '(' || currentChar == ')' ||
                  currentChar == '{' || currentChar == '}' ||
@@ -429,24 +414,54 @@ void Lexer::analyze()
                  currentChar == ',' || currentChar == ';' ||
                  currentChar == '?' || currentChar == ':')
         {
-            tokens.emplace_back(Token("sep", currentWord));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "sep", currentWord));
         }
         else
-            infos.emplace_back(Info(line, col, currentWord.length(), "Error", "Unknown Character"));
+            tokens.emplace_back(Token(line, col - currentWord.length(), "Error", "Unknown Character"));
     }
 }
 
 void Lexer::outputTokens()
 {
     for (auto &token : tokens)
-        std::cout << token << std::endl;
+        if (token.m_type != "Error" && token.m_type != "Warning")
+            std::cout << token << std::endl;
 }
 
-void Lexer::outputInfos()
+void Lexer::outputExceptions()
 {
-    for (auto &info : infos)
+    for (auto &token : tokens)
     {
-        std::cout << filePath << ':' << info.m_line << ':' << info.m_col << ':';
-        std::cout << info.m_type << ':' << info.m_info << std::endl;
+        if (token.m_type == "Error" || token.m_type == "Warning")
+        {
+            std::cout << filePath << ':' << token.m_line << ':' << token.m_col << ':';
+            std::cout << token.m_type << ':' << token.m_value << std::endl;
+        }
     }
+}
+
+void Lexer::outputCounts()
+{
+    int totalCharCount = program.length();
+    int totalLineCount = 1;
+    for (auto &char_ : program)
+    {
+        if (char_ == '\n')
+        {
+            totalLineCount++;
+        }
+    }
+    if (program.back() == '\n')
+        totalLineCount--;
+    std::unordered_map<std::string, size_t> typesCount;
+    for (auto &token : tokens)
+    {
+        typesCount[token.m_type]++;
+    }
+    for (auto &typeCount : typesCount)
+    {
+        std::cout << typeCount.first << ": " << typeCount.second << std::endl;
+    }
+    std::cout << "Total Line: " << totalLineCount << std::endl;
+    std::cout << "Total Charactor: " << totalCharCount << std::endl;
 }

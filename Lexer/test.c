@@ -17,14 +17,14 @@ int main()
         printf("wubba lubba dub dub\n");
     else
         goto here;
-    here:
+here:
     for (dec = 0; dec < 10; dec++)
         continue;
     switch (c)
     {
     case '1':
         break;
-    
+
     default:
         break;
     }

@@ -6,5 +6,6 @@ int main()
     Lexer lexer(filePath);
     lexer.analyze();
     lexer.outputTokens();
-    lexer.outputInfos();
+    lexer.outputExceptions();
+    lexer.outputCounts();
 }
