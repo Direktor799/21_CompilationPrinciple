@@ -1,8 +1,13 @@
 #include <iostream>
 #include "Lexer.h"
-int main()
+int main(int argc, char **argv)
 {
-    std::string filePath = "test.c";
+    if (argc != 2)
+    {
+        std::cout << "Invalid parameter, try ./Lexer [filepath]" << std::endl;
+        return 0;
+    }
+    std::string filePath = argv[1];
     Lexer lexer(filePath);
     lexer.analyze();
     lexer.outputTokens();
