@@ -27,8 +27,8 @@ public:
     std::string m_info;
 
     Token(size_t line, size_t col, std::string type, std::string value, std::string info = "")
-    : m_line(line), m_col(col), m_type(type), m_value(value), m_info(info){};
-    friend std::ostream &operator<<(std::ostream &out, Token &token)
+        : m_line(line), m_col(col), m_type(type), m_value(value), m_info(info){};
+    friend std::ostream &operator<<(std::ostream &out, const Token &token)
     {
         out << '<' << token.m_type << ", " << token.m_value << '>';
         return out;
@@ -47,7 +47,7 @@ private:
     size_t col;
     std::vector<Token> tokens;
     void nextChar();
-    void rollBack(size_t length = 1);
+    void rollBack();
 
 public:
     Lexer(std::string path);

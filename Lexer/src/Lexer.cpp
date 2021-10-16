@@ -33,9 +33,9 @@ void Lexer::nextChar()
     }
 }
 
-void Lexer::rollBack(size_t length)
+void Lexer::rollBack()
 {
-    pos = std::max(pos - length, 0UL);
+    pos = std::max(pos - 1, 0UL);
     if (currentChar == '\n')
     {
         line--;
@@ -46,7 +46,7 @@ void Lexer::rollBack(size_t length)
     {
         col--;
     }
-    currentWord = currentWord.substr(0, currentWord.length() - length);
+    currentWord = currentWord.substr(0, currentWord.length() - 1);
     currentChar = currentWord.back();
 }
 
