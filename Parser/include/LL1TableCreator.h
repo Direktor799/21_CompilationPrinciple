@@ -1,28 +1,43 @@
 #pragma once
 
+#include <iomanip>
+#include <iostream>
 #include <string>
-#include <vector>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-typedef std::string Terminator;
-typedef std::string NonTerminator;
-typedef std::vector<std::string> SententialForm;
-typedef std::pair<NonTerminator, SententialForm> Production;
-typedef std::unordered_map<NonTerminator, std::unordered_map<Terminator, Production>> LL1Table;
+using Terminator = std::string;
+using NonTerminator = std::string;
+using Symbol = std::string;
+using SententialForm = std::vector<Symbol>;
+using Production = std::pair<NonTerminator, SententialForm>;
+using LL1Table = std::unordered_map<NonTerminator, std::unordered_map<Terminator, Production>>;
 
-class LL1TableCreator
-{
-private:
+std::ostream &operator<<(std::ostream &out, const LL1Table &table);
+
+class LL1TableCreator {
+  private:
+    std::unordered_set<Terminator> m_terminatorSet;
     std::unordered_set<NonTerminator> m_nonTerminatorSet;
-    std::unordered_map<NonTerminator, std::unordered_set<SententialForm>> m_productions;
-    std::unordered_set<Terminator> _getFirstSet(NonTerminator term);
-    std::unordered_set<Terminator> _getFollowSet(NonTerminator term);
-    bool _isNonTerminator(NonTerminator term);
+    NonTerminator m_startNonTerminator;
+    std::vector<Production> m_productions;
+    std::unordered_map<Symbol, std::unordered_set<Terminator>> m_firstSet;
+    std::unordered_map<NonTerminator, std::unordered_set<Terminator>> m_followSet;
+    LL1Table m_table;
+    void _setSymbolSet();
+    bool _isNonTerminator(Symbol symbol);
+    void _calculateFirstSet();
+    void _calculateFollowSet();
+    std::unordered_set<Terminator> _getFirstOf(const SententialForm &sententialForm);
 
-public:
-    LL1TableCreator(std::vector<std::string> productions);
-    void setProductions(std::vector<std::string> productions);
-    LL1Table getLL1Table();
+  public:
+    LL1TableCreator() = default;
+    LL1TableCreator(std::vector<Production> productions, const NonTerminator &startNonTerminator);
+    void setProductions(std::vector<Production> productions);
+    void setStartNonTerminator(const NonTerminator &startNonTerminator);
+    void calculateLL1Table();
+    LL1Table getLL1Table() const;
+    const NonTerminator getStartNonTerminator() const;
     ~LL1TableCreator() = default;
 };
