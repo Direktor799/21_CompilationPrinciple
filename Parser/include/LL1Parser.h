@@ -5,7 +5,6 @@
 
 class LL1Parser {
   private:
-    /* data */
     LL1Table m_table;
     NonTerminator m_startNonTerminator;
     std::unordered_set<Terminator> m_terminatorSet;
