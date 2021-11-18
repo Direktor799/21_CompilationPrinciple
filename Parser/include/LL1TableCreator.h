@@ -33,8 +33,9 @@ class LL1TableCreator {
 
   public:
     LL1TableCreator() = default;
-    LL1TableCreator(std::vector<Production> productions, const NonTerminator &startNonTerminator);
-    void setProductions(std::vector<Production> productions);
+    LL1TableCreator(const std::vector<Production> &productions,
+                    const NonTerminator &startNonTerminator);
+    void setProductions(const std::vector<Production> &productions);
     void setStartNonTerminator(const NonTerminator &startNonTerminator);
     void calculateLL1Table();
     LL1Table getLL1Table() const;

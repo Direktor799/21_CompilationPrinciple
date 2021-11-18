@@ -46,13 +46,13 @@ std::ostream &operator<<(std::ostream &out, const LL1Table &table) {
     return out << std::endl;
 }
 
-LL1TableCreator::LL1TableCreator(std::vector<Production> productions,
+LL1TableCreator::LL1TableCreator(const std::vector<Production> &productions,
                                  const NonTerminator &startNonTerminator)
     : m_productions(productions), m_startNonTerminator(startNonTerminator) {
     _setSymbolSet();
 }
 
-void LL1TableCreator::setProductions(std::vector<Production> productions) {
+void LL1TableCreator::setProductions(const std::vector<Production> &productions) {
     m_productions = productions;
     _setSymbolSet();
 }
