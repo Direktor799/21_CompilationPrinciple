@@ -11,7 +11,6 @@ int main() {
     //     Production("F", {"(", "E", ")"}),     Production("F", {"num"})};
 
     // LL1TableCreator ll1tableCreator(nonRecursiveProductions, "E");
-    // ll1tableCreator.calculateLL1Table();
     // std::cout << ll1tableCreator.getLL1Table();
     // LL1Parser ll1parser(ll1tableCreator.getLL1Table(), ll1tableCreator.getStartNonTerminator());
     // std::string sentence;

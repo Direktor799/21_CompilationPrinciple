@@ -16,10 +16,6 @@ class LL1Parser {
     void _error(const std::string &sentence);
 
   public:
-    LL1Parser() = default;
     LL1Parser(const LL1Table &table, const NonTerminator &startNonTerminator);
-    void setLL1Table(const LL1Table &table);
-    void setStartNonTerminator(const NonTerminator &startNonTerminator);
     bool parse(std::string sentence);
-    ~LL1Parser() = default;
 };

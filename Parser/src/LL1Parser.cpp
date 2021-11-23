@@ -7,15 +7,6 @@ LL1Parser::LL1Parser(const LL1Table &table, const NonTerminator &startNonTermina
     _setSymbolSet();
 }
 
-void LL1Parser::setLL1Table(const LL1Table &table) {
-    m_table = table;
-    _setSymbolSet();
-}
-
-void LL1Parser::setStartNonTerminator(const NonTerminator &startNonTerminator) {
-    m_startNonTerminator = startNonTerminator;
-}
-
 bool LL1Parser::parse(std::string sentence) {
     sentence += "$";
     std::vector<Symbol> symbolStack;

@@ -29,16 +29,12 @@ class LL1TableCreator {
     bool _isNonTerminator(Symbol symbol);
     void _calculateFirstSet();
     void _calculateFollowSet();
+    void _calculateLL1Table();
     std::unordered_set<Terminator> _getFirstOf(const SententialForm &sententialForm);
 
   public:
-    LL1TableCreator() = default;
     LL1TableCreator(const std::vector<Production> &productions,
                     const NonTerminator &startNonTerminator);
-    void setProductions(const std::vector<Production> &productions);
-    void setStartNonTerminator(const NonTerminator &startNonTerminator);
-    void calculateLL1Table();
     LL1Table getLL1Table() const;
     const NonTerminator getStartNonTerminator() const;
-    ~LL1TableCreator() = default;
 };

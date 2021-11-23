@@ -27,5 +27,4 @@ class LRParser {
   public:
     LRParser(const LRTable &table, const std::vector<Production> &productions);
     bool parse(std::string sentence);
-    ~LRParser() = default;
 };

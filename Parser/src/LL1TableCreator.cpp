@@ -17,7 +17,6 @@ std::ostream &operator<<(std::ostream &out, const LL1Table &table) {
             maxProductionLength = std::max(length, maxProductionLength);
         }
     }
-    out << maxProductionLength << std::endl;
     out.setf(std::ios_base::left);
     out << std::setw(maxProductionLength + 2) << "";
     for (auto &terminator : terminatorSet) {
@@ -50,15 +49,7 @@ LL1TableCreator::LL1TableCreator(const std::vector<Production> &productions,
                                  const NonTerminator &startNonTerminator)
     : m_productions(productions), m_startNonTerminator(startNonTerminator) {
     _setSymbolSet();
-}
-
-void LL1TableCreator::setProductions(const std::vector<Production> &productions) {
-    m_productions = productions;
-    _setSymbolSet();
-}
-
-void LL1TableCreator::setStartNonTerminator(const NonTerminator &startNonTerminator) {
-    m_startNonTerminator = startNonTerminator;
+    _calculateLL1Table();
 }
 
 void LL1TableCreator::_setSymbolSet() {
@@ -179,7 +170,7 @@ std::unordered_set<Terminator> LL1TableCreator::_getFirstOf(const SententialForm
     return firstSet;
 }
 
-void LL1TableCreator::calculateLL1Table() {
+void LL1TableCreator::_calculateLL1Table() {
     m_table.clear();
     for (auto &production : m_productions) {
         const NonTerminator &A = production.first;
